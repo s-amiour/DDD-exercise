@@ -30,6 +30,8 @@ console.log(`Total cost: $${total}`)  // Business logic violation; cost -30
 
 //############################################################################################################################################################################################################################
 
+// SOLUTION
+
 // Type declarations using Brand utility
 type Brand<K, T> = K & { __brand: T }
 
@@ -85,55 +87,3 @@ const runRestaurantOrder = (rawPrice: number, rawQty: number): EUR | undefined =
 		}
 	}
 }
-
-
-
-// DUMP
-
-// // Define the Brand utility
-// type Brand<K, T> = K & { __brand: T }
-
-// // Domain-specific types
-// type USD = Brand<number, "USD">
-// type Quantity= Brand<number, "Quantity">
-
-// /*    TYPES   */
-// const calculatePrice = (price: USD, quantity: Quantity): USD => {
-// 	return (price * quantity) as USD
-// }
-
-/* RESTAURANT DOMAIN  */
-/*   user orders 3 pizzas for $10  */
-
-// const total = calculatePrice(45651321, -3)
-
-// const makePrice = (value: number): USD => {
-// 	if (value < 0) throw new Error("Price cannot be negative")
-// 	if (value > 1000)
-// 		throw new Error("Price seems suspiciously high for a pizza!")
-// 	return value as USD
-// }
-
-// const makeQuantity = (value: number): Quantity => {
-// 	if (value <= 0) throw new Error("Quantity must be positive")
-// 	if (!Number.isInteger(value))
-// 		throw new Error("Quantity must be a whole number")
-// 	return value as Quantity
-// }
-
-// try {
-// 	// These validators ensure the numbers make sense before the function ever runs
-// 	const pizzaPrice = makePrice(-10)
-// 	const pizzaCount = makeQuantity(3)
-
-// 	const total = calculatePrice(pizzaPrice, pizzaCount)
-// 	console.log(`Total is $${total}`) // Total is $30
-
-// try {
-
-// 	const total = calculatePrice(456 as USD, 4856 as Quantity)  // Interpreter reads it as: const total = calculatePrice(456, 4856)
-
-// 	console.log(total)
-// } catch (e: unknown) {
-// 	console.error(e instanceof Error ? e.message : "An unknown error occurred")
-// }
