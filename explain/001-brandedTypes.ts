@@ -1,21 +1,22 @@
-// PREVIOUS KNOWLEDGE:
-// 1. Running code in TypeScript with Node.js
-// 2. Basic TypeScript types (number, string, boolean, etc.)
-// 3. Functions and type annotations
-// 4. Type safety and compile-time checks
-// 5. Factory functions
+/** 
+ * PREVIOUS KNOWLEDGE:
+1. Running code in TypeScript with Node.js
+2. Basic TypeScript types (number, string, boolean, etc.)
+3. Functions and type annotations
+4. Type safety and compile-time checks
+5. Factory functions
+*/
 
-/*  Restaurant Domain  */
+/*  Restaurant Domain Naive Method */
 
-const calculatePrice = (price: number, quantity: number): number => {
+const calculatePriceNaive = (price: number, quantity: number): number => {
 	return price * quantity
 }
 // This function is very flexible but also very error-prone. It accepts any numbers !
 
-/*  Manual tests  */
-const total = calculatePrice(10, 3)  // user inputs price and quantity
+const total = calculatePriceNaive(10, -3)  // user inputs price and quantity
 
-console.log(`Total cost: $${total}`)
+console.log(`Total cost: $${total}`)  // Business logic violation; cost -30
 
 //############################################################################################################################################################################################################################
 
@@ -29,39 +30,72 @@ console.log(`Total cost: $${total}`)
 
 //############################################################################################################################################################################################################################
 
+// Type declarations using Brand utility
 type Brand<K, T> = K & { __brand: T }
 
 type EUR = Brand<number, "EUR">
 type Quantity = Brand<number, "Quantity">
 
-// RESP 1. 
-// Validate price
+
+/* Factory functions */
+// TODO 1: validate price && Validate quantity
 const makePrice = (price: number): EUR => {
 	if (price < 0) 
-		throw new Error("Error: Price cannot be negative")
+		throw new Error("! Error: Price cannot be negative")
 	return price as EUR
 }
 
-// Validate quantity
 const makeQuantity = (quantity: number): Quantity => {
 	if (quantity < 0) 
-		throw new Error("Error: Price cannot be negative")
+		throw new Error("! Error: Quantity cannot be negative")
 	if (!Number.isInteger(quantity))
-		throw new Error("Error: Quantity cannot be negative")
+		throw new Error("! Error: Quantity must be a whole number")
 	return quantity as Quantity
+}
+
+/* Business logic  */
+// TODO 2 & 3: update calculatePrice to accept only branded types
+const calculatePrice = (price: EUR, quantity: Quantity): EUR => {
+    // TS allows multiplication of numbers, but we must cast the result back to EUR because (Brand * Brand) returns a raw number.
+    return (price * quantity) as EUR
+}
+
+/* Restaurant price handling */
+// TODO 4: try-catch blocks to handle calculating price correctly
+const runRestaurantOrder = (rawPrice: number, rawQty: number): EUR | undefined => {
+	console.log(`-- Attempting order: Price ${rawPrice}, Quantity ${rawQty} --`)
+
+	try {
+		// first, validate inputs
+		const validPrice = makePrice(rawPrice)
+		const validQuantity = makeQuantity(rawQty)
+
+		// calculate price
+		const bill = calculatePrice(validPrice, validQuantity)
+		// NOTE TO SELF: `const bill = calculatePrice(10, 5)` or `const bill = calculatePrice(rawPrice, rawQty)` WILL CAUSE AN ERROR !
+		
+		console.log(`Calculated Bill: ${bill} EUR. Prepare check-out.`)
+
+		return bill as EUR
+	} catch (error) {
+		if (error instanceof Error){
+			console.error(`Transaction Failed: ${error.message}`)
+		} else {
+			console.error(`An unknown error occurred`)
+		}
+	}
 }
 
 
 
-/* TYPES  */
-/* TYPESCRIPT THING  */
+// DUMP
 
 // // Define the Brand utility
 // type Brand<K, T> = K & { __brand: T }
 
 // // Domain-specific types
 // type USD = Brand<number, "USD">
-// type Quantity = Brand<number, "Quantity">
+// type Quantity= Brand<number, "Quantity">
 
 // /*    TYPES   */
 // const calculatePrice = (price: USD, quantity: Quantity): USD => {
@@ -97,7 +131,7 @@ const makeQuantity = (quantity: number): Quantity => {
 
 // try {
 
-// 	const total = calculatePrice(456 as USD, 4856 as Quantity)
+// 	const total = calculatePrice(456 as USD, 4856 as Quantity)  // Interpreter reads it as: const total = calculatePrice(456, 4856)
 
 // 	console.log(total)
 // } catch (e: unknown) {
