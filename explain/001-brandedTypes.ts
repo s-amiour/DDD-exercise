@@ -14,9 +14,9 @@ const calculatePriceNaive = (price: number, quantity: number): number => {
 }
 // This function is very flexible but also very error-prone. It accepts any numbers !
 
-const total = calculatePriceNaive(10, -3)  // user inputs price and quantity
+const totalNaive = calculatePriceNaive(10, -3)  // user inputs price and quantity
 
-console.log(`Total cost: $${total}`)  // Business logic violation; cost -30
+console.log(`Total cost: $${totalNaive}`)  // Business logic violation; cost -30
 
 //############################################################################################################################################################################################################################
 
@@ -87,3 +87,17 @@ const runRestaurantOrder = (rawPrice: number, rawQty: number): EUR | undefined =
 		}
 	}
 }
+
+
+//##########  Tests  ##########
+
+const validPrice1 = makePrice(7.90)
+const validQuantity1 = makeQuantity(1)
+
+const validPrice2 = makePrice(5.90)
+const validQuantity2 = makeQuantity(1)
+
+const validPrice = validPrice1 + validPrice2
+const validQuantity = validQuantity1 + validQuantity2
+
+const bill = runRestaurantOrder(validPrice, validQuantity)
