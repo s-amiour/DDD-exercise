@@ -3,14 +3,14 @@
 
 // Type declaration
 // NOTE: Type declarations whose JS translated form is not existant
-type User = {
+type naiveUser = {
 	name: any
 	email: string
 	phone: string
 	password: string
 }
 
-const createUser = (name: any, email: string, phone: string, password: string): User => {
+const naiveCreateUser = (name: any, email: string, phone: string, password: string): naiveUser => {
 	return {
 		name,
 		email,
@@ -21,14 +21,14 @@ const createUser = (name: any, email: string, phone: string, password: string): 
 // CAREFUL ! This function is very flexible but also very error-prone. It accepts any strings !
 
 /*  manual tests   */
-const newUser = createUser(
+const newNaiveUser = naiveCreateUser(
 	true,  // type violation
 	"alice@example.com",
 	"secret123",  // business logic violation
 	"123-456-7890",  // business logic violation
 )
 
-console.table(newUser)
+console.table(newNaiveUser)
 
 //############################################################################################################################################################################################################################
 
