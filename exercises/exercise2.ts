@@ -28,14 +28,12 @@ import { logError } from "./logger.js"
 // 1. DEFINE THE DOMAIN TYPE (Branded Type)
 // ------------------------------------------------------------------
 // A 'Quantity' is a number, but not just ANY number.
-// It carries a unique "brand" so TypeScript knows it's special.
 type Quantity = number & { readonly __brand: unique symbol }
 
 
 // ------------------------------------------------------------------
 // 2. DEFINE THE SMART CONSTRUCTOR (Factory Function)
 // ------------------------------------------------------------------
-// This is the gatekeeper. It enforces all business rules for Quantities.
 const createQuantity = (n: number): Quantity => {
     // Rule 1: Must be a whole number (no half-pizzas)
     if (!Number.isInteger(n)) {
@@ -68,10 +66,6 @@ export function exercise2_PrimitiveQuantity() {
 	try {
         console.log("Attempting to order -3 Pizzas...")
         
-        // COMPILE ERROR PREVENTION:
-        // const order: Order = { itemName: "Pizza", quantity: -3, ... } // ❌ Error!
-        
-        // We must use the constructor:
         const validQuantity = createQuantity(-3) 
 
         const order: Order = {
@@ -80,10 +74,9 @@ export function exercise2_PrimitiveQuantity() {
             pricePerUnit: 15,
         }
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`)
+        console.log(`BLOCKED: ${error.message}`)
     }
 
-    // --- Scenario B: The Absurd Quantity Bug ---
     try {
         console.log("Attempting to order 50,000 Coffees...")
         
@@ -96,10 +89,9 @@ export function exercise2_PrimitiveQuantity() {
             pricePerUnit: 3,
         }
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`)
+        console.log(`BLOCKED: ${error.message}`)
     }
 
-    // --- Scenario C: Valid Order ---
     try {
         const saneQuantity = createQuantity(5)
         const validOrder: Order = {
@@ -108,7 +100,7 @@ export function exercise2_PrimitiveQuantity() {
             pricePerUnit: 3,
         }
         const total = validOrder.quantity * validOrder.pricePerUnit
-        console.log(`\n✅ SUCCESS: Ordered ${validOrder.quantity} ${validOrder.itemName}s. Total: $${total}`)
+        console.log(`\nSuccess: Ordered ${validOrder.quantity} ${validOrder.itemName}s. Total: $${total}`)
     } catch (e) {
         logError(2, "Valid order failed", e)
     }

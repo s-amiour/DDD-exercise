@@ -74,20 +74,14 @@ class OperatingHours {
         )
     }
 
-    // Domain Logic: "Are we open?"
-    // This logic now lives HERE, not scattered in your UI code.
     isOpenAt(current: number): boolean {
         // Validate the input first
         const checkHour = createHour(current);
 
-        // Scenario A: Standard Day (e.g., 09:00 to 17:00)
         if (this.opens < this.closes) {
             return checkHour >= this.opens && checkHour < this.closes;
         } 
         
-        // Scenario B: Overnight (e.g., 22:00 to 06:00)
-        // We are open if it is AFTER opening time OR BEFORE closing time.
-        // (e.g., Is 23:00 open? Yes (>= 22). Is 02:00 open? Yes (< 06).)
         else {
             return checkHour >= this.opens || checkHour < this.closes;
         }
@@ -105,7 +99,6 @@ export function exercise6_TemporalLogic() {
         hours: OperatingHours;
     }
 
-    // --- Scenario A: Valid Overnight Restaurant ---
     try {
         const joesDiner: Restaurant = {
             name: "Joe's Diner",
@@ -117,23 +110,22 @@ export function exercise6_TemporalLogic() {
         // Test 1: Check 2 AM (Should be OPEN)
         const checkTime1 = 2;
         const result1 = joesDiner.hours.isOpenAt(checkTime1);
-        console.log(`   Is open at ${checkTime1}:00? ${result1 ? "✅ YES" : "❌ NO"}`);
+        console.log(`   Is open at ${checkTime1}:00? ${result1 ? "y" : "n"}`);
 
         // Test 2: Check 11 AM (Should be CLOSED)
         const checkTime2 = 11;
         const result2 = joesDiner.hours.isOpenAt(checkTime2);
-        console.log(`   Is open at ${checkTime2}:00? ${result2 ? "❌ YES" : "✅ NO"}`);
+        console.log(`   Is open at ${checkTime2}:00? ${result2 ? "y" : "n"}`);
 
     } catch (e: any) {
         logError(6, "Unexpected error", e);
     }
 
-    // --- Scenario B: Invalid Data Prevention ---
     try {
         console.log("\nAttempting to create invalid hours (25:00)...");
         // This throws immediately
         const brokenHours = OperatingHours.create(25, -5); 
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`);
+        console.log(`BLOCKED: ${error.message}`);
     }
 }

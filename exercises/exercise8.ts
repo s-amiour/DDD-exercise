@@ -38,30 +38,28 @@ import { logError } from "./logger.js"
 type Email = string & { readonly __brand: unique symbol }
 
 const parseEmail = (raw: string): Email => {
-    // Step A: Sanitize (Trim whitespace)
+    // Sanitize (Trim whitespace)
     const trimmed = raw.trim();
 
-    // Step B: Check existence
+    // Check existence
     if (trimmed.length === 0) {
         throw new Error("[Email Error] Email cannot be empty.");
     }
 
-    // Step C: Validate Format (Regex)
-    // Rules: Text + @ + Text + . + Text (Simple but effective)
+    // Validate Format (Regex)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmed)) {
         throw new Error(`[Email Error] Invalid format: "${raw}"`);
     }
 
-    // Step D: Normalize (Store as lowercase)
-    // This ensures "Alice@Example.com" and "alice@example.com" are treated as equal.
+    // Normalize (Store as lowercase)
     return trimmed.toLowerCase() as Email;
 }
 
 export function exercise8_EmailValidation() {
 	type Customer = {
         name: string
-        email: Email // <--- Replaced 'string'
+        email: Email
     }
 
     // Raw input from an "API" or "Form" (Untrusted Data)
@@ -76,13 +74,11 @@ export function exercise8_EmailValidation() {
 
     console.log(`Processing ${rawInputs.length} incoming records...`);
 
-    // We process the raw inputs. 
     // We only create a 'Customer' if the email parses successfully.
     const validCustomers: Customer[] = [];
 
     rawInputs.forEach(input => {
         try {
-            // THE MOMENT OF TRUTH:
             // We attempt to "Parse" the string into an Email type.
             const parsedEmail = parseEmail(input.rawEmail);
 
@@ -93,7 +89,7 @@ export function exercise8_EmailValidation() {
             };
 
             validCustomers.push(customer);
-            console.log(`✅ [Success] Created customer: ${customer.name} (${customer.email})`);
+            console.log(`[Success] Created customer: ${customer.name} (${customer.email})`);
 
         } catch (error: any) {
             // If parsing fails, the bad data never enters our domain model.

@@ -79,27 +79,32 @@ const makePassword()
 // It prevents a raw 'string' from being passed where a 'Email' is expected.
 type Branded<K, T> = K & { readonly __brand: T };
 
+/* // Java equivalent
+  class Brand<K, T> extends K { 
+    T __brand;  // T is a child class of K
+  }
+*/
+
 export type Name = Branded<string, 'Name'>;
 export type Email = Branded<string, 'Email'>;
 export type Phone = Branded<string, 'Phone'>;
 export type Password = Branded<string, 'Password'>;
 
 // ------------------------------------------------------------------
-// 2. FACTORY FUNCTIONS (Validation Logic)
+// Factory functions
 // ------------------------------------------------------------------
 
 /**
  * Validates and creates a Name.
- * Rules: Non-empty, 2-50 chars, no special symbols (except space/hyphen).
+ * Rules: non-empty, 2-50 chars, no special symbols (except space/hyphen).
  */
 const makeName = (input: unknown): Name => {
-    // Type Check (Runtime)
+    // Business Logic Checks
     if (typeof input !== 'string') {
         throw new Error(`[ValidationError] Name must be a string. Received: ${typeof input}`);
     }
-    const trimmed = input.trim();
+    const trimmed = input.trim();  // no whitespace
 
-    // Business Logic Checks
     if (trimmed.length < 2 || trimmed.length > 50) {
         throw new Error("[ValidationError] Name must be between 2 and 50 characters.");
     }
@@ -115,7 +120,7 @@ const makeName = (input: unknown): Name => {
 
 /**
  * Validates and creates an Email.
- * Rules: Standard Email regex.
+ * Rules: standard email regex.
  */
 const makeEmail = (input: unknown): Email => {
     if (typeof input !== 'string') {
@@ -123,7 +128,7 @@ const makeEmail = (input: unknown): Email => {
     }
     const trimmed = input.trim();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;  // example: samiour@epita.fr
     if (!emailRegex.test(trimmed)) {
         throw new Error("[ValidationError] Invalid email format.");
     }
@@ -136,6 +141,7 @@ const makeEmail = (input: unknown): Email => {
  * Rules: French format (10 digits, starts with 0).
  */
 const makePhone = (input: unknown): Phone => {
+    // Business logic
     if (typeof input !== 'string') {
         throw new Error(`[ValidationError] Phone must be a string.`);
     }
@@ -143,7 +149,7 @@ const makePhone = (input: unknown): Phone => {
     // Remove spaces, dots, dashes for pure digit validation
     const sanitized = input.replace(/[\s.-]/g, '');
 
-    // French Validation: Starts with 0, followed by 1-9, then 8 digits
+    // Local Validation: Starts with 0, followed by 1-9, then 8 digits
     const phoneRegex = /^0[1-9]\d{8}$/; 
     
     if (!phoneRegex.test(sanitized)) {
@@ -170,7 +176,7 @@ const makePassword = (input: unknown): Password => {
 };
 
 // ------------------------------------------------------------------
-// 3. MAIN DOMAIN FUNCTION
+// Main Domain Function
 // ------------------------------------------------------------------
 
 type User = {
@@ -192,7 +198,7 @@ const createUser = (name: Name, email: Email, phone: Phone, password: Password):
 };
 
 // ------------------------------------------------------------------
-// 4. EXECUTION (Try-Catch Block)
+// 4. Exec (Try-Catch Block)
 // ------------------------------------------------------------------
 
 const runRegistration = () => {
@@ -215,15 +221,15 @@ const runRegistration = () => {
             userPass
         );
 
-        console.log("✅ Success! User created:");
+        console.log("Success. User created:");
         console.table(newUser);
 
     } catch (error) {
         // Step C: Graceful Error Handling
         if (error instanceof Error) {
-            console.error(`❌ Registration Failed: ${error.message}`);
+            console.error(`Registration Failed: ${error.message}`);
         } else {
-            console.error("❌ An unexpected error occurred.");
+            console.error("An unexpected error occurred.");
         }
     }
 };

@@ -54,7 +54,6 @@ class Table {
     ) {}
 
     // Factory Method (Smart Constructor)
-    // Ensures a Table starts its life in a valid state.
     static create(tableNumber: number, capacity: number): Table {
         if (capacity <= 0) {
             throw new Error(`[Domain Error] Table ${tableNumber} capacity must be positive.`);
@@ -69,7 +68,6 @@ class Table {
     }
 
     // Domain Method: Changing State (Seating Guests)
-    // This encapsulates the logic for "Sitting Down".
     seatGuests(count: number): void {
         if (count <= 0) {
             throw new Error("[Domain Error] Must seat at least one guest.");
@@ -94,10 +92,9 @@ export function exercise4_BusinessRuleViolation() {
         // const badTable = new Table(1, 0); // Compile Error: Constructor is private
         const badTable = Table.create(1, 0); // Runtime Error
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`);
+        console.log(`BLOCKED: ${error.message}`);
     }
 
-    // --- Scenario B: Valid Table, Invalid Action ---
     try {
         // Create a valid table (Capacity 4)
         const table = Table.create(5, 4);
@@ -108,23 +105,19 @@ export function exercise4_BusinessRuleViolation() {
         table.seatGuests(7); 
 
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`);
+        console.log(`BLOCKED: ${error.message}`);
     }
 
-    // --- Scenario C: Valid Table, Valid Action ---
     try {
         const happyTable = Table.create(10, 6);
         
         // Seat 4 people
         happyTable.seatGuests(4);
-        console.log(`\n✅ SUCCESS: Table ${happyTable.tableNumber} now has ${happyTable.currentGuests} guests.`);
+        console.log(`success: Table ${happyTable.tableNumber} now has ${happyTable.currentGuests} guests.`);
 
         // Seat 2 more (Total 6 - Full)
         happyTable.seatGuests(2);
-        console.log(`✅ SUCCESS: Table ${happyTable.tableNumber} is now full (${happyTable.currentGuests}/${happyTable.capacity}).`);
-
-        // Try to seat 1 more (Overflow)
-        // happyTable.seatGuests(1); // This would throw!
+        console.log(`success: Table ${happyTable.tableNumber} is now full (${happyTable.currentGuests}/${happyTable.capacity}).`);
 
     } catch (e) {
         logError(4, "Unexpected error in valid flow", e);

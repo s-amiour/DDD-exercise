@@ -14,7 +14,7 @@ import { logError } from "./logger.js"
 //   type Price = number & { readonly __brand: unique symbol }
 //   function createPrice(amount: number): Price {
 //       if (amount < 0) throw new Error("Price cannot be negative")
-//       if (amount > 10_000) throw new Error("Price exceeds maximum")
+//       if (amount > 10000) throw new Error("Price exceeds maximum")
 //       return amount as Price
 //   }
 //
@@ -24,24 +24,22 @@ import { logError } from "./logger.js"
 // ============================================================================
 
 
-// 1. Define the Branded Type
-// This creates a "nominal" type. TypeScript sees 'Price' as distinct from 'number'.
+// Define the Branded Type
 type Price = number & { readonly __brand: unique symbol }
 
-// 2. Define the Factory Function (The Validator)
-// This is the ONLY place in the app where a 'Price' is minted.
+// Define the Factory function
 const createPrice = (amount: number): Price => {
-    // Validation Rule 1: No negative numbers
+    // No negative numbers
     if (amount < 0) {
         throw new Error(`[Domain Error] Price cannot be negative. Received: ${amount}`)
     }
     
-    // Validation Rule 2: Sanity check (optional business rule)
+    // Sanity check (optional business rule)
     if (amount > 1000) {
         throw new Error(`[Domain Error] Price exceeds maximum limit. Received: ${amount}`)
     }
 
-    // "Bless" the number as a Price
+    // number as a Price
     return amount as Price
 }
 
@@ -52,7 +50,6 @@ export function exercise1_PrimitivePrice() {
         price: Price
         quantity: number
     }
-	console.log("\n--- Exercise 1: Primitive Obsession Fix ---")
 
     // Attempting to use the invalid data (Refactored logic)
     try {
@@ -71,7 +68,7 @@ export function exercise1_PrimitivePrice() {
 
     } catch (error: any) {
         // Catching the validation error
-        console.log(`✅ SUCCESS: The system prevented the bad data!`)
+        console.log(`success: The system prevented the bad data!`)
         console.error(`   Error caught: "${error.message}"`)
     }
 
@@ -84,7 +81,7 @@ export function exercise1_PrimitivePrice() {
         }
         
         const total = validItem.price * validItem.quantity
-        console.log(`\n✅ Created valid item: ${validItem.name} for $${validItem.price}`)
+        console.log(`\nCreated valid item: ${validItem.name} for $${validItem.price}`)
         console.log(`   Total calculated: $${total}`)
         
     } catch (e) {

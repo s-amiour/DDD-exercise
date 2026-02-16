@@ -71,14 +71,13 @@ class OrderRepository {
         }
         
         this.storage.set(order.orderId, order);
-        console.log(`✅ Saved Order: ${order.orderId} for ${order.customerName}`);
+        console.log(`Saved Order: ${order.orderId} for ${order.customerName}`);
     }
 }
 
 export function exercise5_IdentityCrisis() {
 	const repository = new OrderRepository();
 
-    // --- Scenario A: Invalid Format (Caught by Value Object) ---
     try {
         console.log("Attempting to create order with empty ID...");
         // const badId = createOrderId(""); // Throws immediately
@@ -89,10 +88,9 @@ export function exercise5_IdentityCrisis() {
             total: 25
         };
     } catch (error: any) {
-        console.log(`✅ BLOCKED (Format): ${error.message}`);
+        console.log(`BLOCKED (Format): ${error.message}`);
     }
 
-    // --- Scenario B: Duplicates (Caught by Repository) ---
     try {
         const sharedId = createOrderId("ORD-99999");
 
@@ -107,10 +105,9 @@ export function exercise5_IdentityCrisis() {
         repository.save(order2);
 
     } catch (error: any) {
-        console.log(`✅ BLOCKED (Unique): ${error.message}`);
+        console.log(`BLOCKED (Unique): ${error.message}`);
     }
 
-    // --- Scenario C: Auto-Generation (Happy Path) ---
     try {
         const newId = generateOrderId(); // e.g., "ORD-12345..."
         const validOrder: Order = {

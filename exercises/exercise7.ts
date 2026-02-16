@@ -50,7 +50,6 @@ type Currency = "USD" | "EUR" | "GBP";
 
 class Money {
     // Private: We store money as INTEGER CENTS to avoid floating point errors.
-    // $10.50 is stored as 1050.
     private constructor(
         private readonly cents: number, 
         public readonly currency: Currency
@@ -64,7 +63,6 @@ class Money {
     }
 
     // Factory B: Create from "Machine Readable" Cents (e.g., 1250)
-    // Useful for loading from databases (Stripe uses cents).
     static fromCents(amount: number, currency: Currency): Money {
         if (!Number.isInteger(amount)) {
             throw new Error(`[Money Error] Cents must be an integer. Received: ${amount}`);
@@ -91,10 +89,9 @@ class Money {
 export function exercise7_CurrencyConfusion() {
 	type MenuItem = {
         name: string;
-        price: Money; // <--- No longer a number!
+        price: Money;
     }
 
-    // --- Scenario A: Clarity in Creation ---
     // Developer 1 thinks in "Dollars"
     const burger: MenuItem = {
         name: "Burger",
@@ -107,22 +104,19 @@ export function exercise7_CurrencyConfusion() {
         price: Money.fromCents(1850, "USD"), // Explicit! ($18.50)
     }
 
-    // --- Scenario B: Safe Calculation ---
     try {
         console.log(`Burger: ${burger.price.toString()}`);
         console.log(`Pizza:  ${pizza.price.toString()}`);
 
-        // The logic is now crystal clear. 
         // We are adding Money objects, not raw numbers.
         const total = burger.price.add(pizza.price);
 
-        console.log(`\n✅ Total Bill: ${total.toString()}`);
+        console.log(`\nTotal Bill: ${total.toString()}`);
         
     } catch (e: any) {
         logError(7, "Calculation failed", e);
     }
 
-    // --- Scenario C: Preventing Currency Mismatch ---
     try {
         const euroSalad = Money.fromDollars(10, "EUR");
         console.log("\nAttempting to add EUR salad to USD burger...");
@@ -131,6 +125,6 @@ export function exercise7_CurrencyConfusion() {
         burger.price.add(euroSalad); 
 
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`);
+        console.log(`BLOCKED: ${error.message}`);
     }
 }

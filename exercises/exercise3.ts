@@ -38,15 +38,14 @@ import { logError } from "./logger.js"
 
 
 // ------------------------------------------------------------------
-// 1. DEFINE BRANDED TYPES
+// Branded type
 // ------------------------------------------------------------------
-// Each type is a string underneath, but TypeScript treats them as distinct.
 type Email = string & { readonly __brand: unique symbol }
 type Phone = string & { readonly __brand: unique symbol }
 type CustomerName = string & { readonly __brand: unique symbol }
 
 // ------------------------------------------------------------------
-// 2. DEFINE SMART CONSTRUCTORS
+// Define smart constructors
 // ------------------------------------------------------------------
 
 const createEmail = (email: string): Email => {
@@ -60,7 +59,7 @@ const createEmail = (email: string): Email => {
 
 const createPhone = (phone: string): Phone => {
     // allow digits and dashes, at least 7 chars
-    const phoneRegex = /^\d[\d-]{6,}$/;
+    const phoneRegex = /^\d[\d-]{6,}$/;  // different regex than prev
     if (!phoneRegex.test(phone)) {
         throw new Error(`[Validation Error] Invalid phone number: "${phone}"`);
     }
@@ -89,16 +88,15 @@ export function exercise3_StringConfusion() {
         // This will throw inside createCustomerName before the object is built
         const badName = createCustomerName(""); 
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`);
+        console.log(`BLOCKED: ${error.message}`);
     }
 
     try {
         const badEmail = createEmail("just-a-string");
     } catch (error: any) {
-        console.log(`✅ BLOCKED: ${error.message}`);
+        console.log(`BLOCKED: ${error.message}`);
     }
 
-    // --- Scenario C: Success Path ---
     try {
         // We must manually "cast" our raw inputs through the factories
         const validCustomer: Customer = {
