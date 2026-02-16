@@ -49,7 +49,7 @@ async function runExercises() {
 	let running = true
 
 	while (running) {
-		const choice = await question("Select an exercise (0-9): ")
+		const choice = await question("Select an exercise (0-9): ")  // await; because the return value is Promise
 
 		switch (choice.trim()) {
 			case "1":

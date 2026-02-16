@@ -41,37 +41,92 @@ import { logError } from "./logger.js"
 // there is no public way to set _currentGuests directly.
 // ============================================================================
 
+
+
+class Table {
+    // Private properties: External code CANNOT change these directly.
+    private _currentGuests: number = 0;
+
+    // Private Constructor: Forces users to use the 'create' factory.
+    private constructor(
+        public readonly tableNumber: number,
+        public readonly capacity: number
+    ) {}
+
+    // Factory Method (Smart Constructor)
+    // Ensures a Table starts its life in a valid state.
+    static create(tableNumber: number, capacity: number): Table {
+        if (capacity <= 0) {
+            throw new Error(`[Domain Error] Table ${tableNumber} capacity must be positive.`);
+        }
+        // Note: new tables always start empty (0 guests)
+        return new Table(tableNumber, capacity);
+    }
+
+    // Public Getter: Read-only access to the state
+    get currentGuests(): number {
+        return this._currentGuests;
+    }
+
+    // Domain Method: Changing State (Seating Guests)
+    // This encapsulates the logic for "Sitting Down".
+    seatGuests(count: number): void {
+        if (count <= 0) {
+            throw new Error("[Domain Error] Must seat at least one guest.");
+        }
+        
+        if (this._currentGuests + count > this.capacity) {
+            throw new Error(`[Domain Error] Table ${this.tableNumber} Overcapacity! Cannot seat ${count} more people. (Capacity: ${this.capacity}, Current: ${this._currentGuests})`);
+        }
+
+        this._currentGuests += count;
+    }
+
+    // Domain Method: Changing State (Leaving)
+    leaveTable(): void {
+        this._currentGuests = 0;
+    }
+}
+
 export function exercise4_BusinessRuleViolation() {
-	type Table = {
-		tableNumber: number
-		capacity: number
-		currentGuests: number
-	}
+	try {
+        
+        // const badTable = new Table(1, 0); // Compile Error: Constructor is private
+        const badTable = Table.create(1, 0); // Runtime Error
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`);
+    }
 
-	// TODO: Replace the plain type with an Entity class that enforces
-	// capacity constraints. The constructor/factory should reject invalid
-	// states, and mutation should go through guarded methods (seatGuests).
+    // --- Scenario B: Valid Table, Invalid Action ---
+    try {
+        // Create a valid table (Capacity 4)
+        const table = Table.create(5, 4);
+        console.log(`Created Table ${table.tableNumber} with capacity ${table.capacity}.`);
 
-	const table: Table = {
-		tableNumber: 5,
-		capacity: 4,
-		currentGuests: 7, // Silent bug! Overcapacity
-	}
+        // Try to seat 7 people (Overcapacity)
+        console.log("Attempting to seat 7 people...");
+        table.seatGuests(7); 
 
-	logError(4, "Table overcapacity - business rule violated", {
-		table,
-		issue: "currentGuests should never exceed capacity!",
-	})
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`);
+    }
 
-	// Another violation - negative guests
-	const emptyTable: Table = {
-		tableNumber: 3,
-		capacity: 6,
-		currentGuests: -2, // Silent bug! Negative guests
-	}
+    // --- Scenario C: Valid Table, Valid Action ---
+    try {
+        const happyTable = Table.create(10, 6);
+        
+        // Seat 4 people
+        happyTable.seatGuests(4);
+        console.log(`\n✅ SUCCESS: Table ${happyTable.tableNumber} now has ${happyTable.currentGuests} guests.`);
 
-	logError(4, "Negative guest count - impossible in real world", {
-		table: emptyTable,
-		issue: "Guests cannot be negative!",
-	})
+        // Seat 2 more (Total 6 - Full)
+        happyTable.seatGuests(2);
+        console.log(`✅ SUCCESS: Table ${happyTable.tableNumber} is now full (${happyTable.currentGuests}/${happyTable.capacity}).`);
+
+        // Try to seat 1 more (Overflow)
+        // happyTable.seatGuests(1); // This would throw!
+
+    } catch (e) {
+        logError(4, "Unexpected error in valid flow", e);
+    }
 }

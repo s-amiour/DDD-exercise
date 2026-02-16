@@ -23,41 +23,93 @@ import { logError } from "./logger.js"
 // make them explicit and impossible to bypass.
 // ============================================================================
 
+
+// ------------------------------------------------------------------
+// 1. DEFINE THE DOMAIN TYPE (Branded Type)
+// ------------------------------------------------------------------
+// A 'Quantity' is a number, but not just ANY number.
+// It carries a unique "brand" so TypeScript knows it's special.
+type Quantity = number & { readonly __brand: unique symbol }
+
+
+// ------------------------------------------------------------------
+// 2. DEFINE THE SMART CONSTRUCTOR (Factory Function)
+// ------------------------------------------------------------------
+// This is the gatekeeper. It enforces all business rules for Quantities.
+const createQuantity = (n: number): Quantity => {
+    // Rule 1: Must be a whole number (no half-pizzas)
+    if (!Number.isInteger(n)) {
+        throw new Error(`[Domain Error] Quantity must be a whole number. Received: ${n}`)
+    }
+
+    // Rule 2: Must be positive (no negative orders)
+    if (n <= 0) {
+        throw new Error(`[Domain Error] Quantity must be positive. Received: ${n}`)
+    }
+
+    // Rule 3: Business Limit (anti-hoarding / mistake prevention)
+    // This number (100) should ideally come from a config or constant.
+    const MAX_QUANTITY = 100;
+    if (n > MAX_QUANTITY) {
+        throw new Error(`[Domain Error] Quantity ${n} exceeds maximum allowed (${MAX_QUANTITY}).`)
+    }
+
+    // If we pass the gauntlet, we bless the number as a Quantity.
+    return n as Quantity
+}
+
 export function exercise2_PrimitiveQuantity() {
 	type Order = {
 		itemName: string
-		quantity: number // Could be 0, negative, or absurdly high!
+		quantity: Quantity
 		pricePerUnit: number
 	}
 
-	const order: Order = {
-		itemName: "Pizza",
-		quantity: -3, // Silent bug! Negative quantity
-		pricePerUnit: 15,
-	}
+	try {
+        console.log("Attempting to order -3 Pizzas...")
+        
+        // COMPILE ERROR PREVENTION:
+        // const order: Order = { itemName: "Pizza", quantity: -3, ... } // ❌ Error!
+        
+        // We must use the constructor:
+        const validQuantity = createQuantity(-3) 
 
-	// TODO: Replace `number` with a Quantity branded type.
-	// Both of the bugs below should become impossible:
-	//   quantity: -3       // <-- negative
-	//   quantity: 50000    // <-- exceeds business limit
+        const order: Order = {
+            itemName: "Pizza",
+            quantity: validQuantity,
+            pricePerUnit: 15,
+        }
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`)
+    }
 
-	const total = order.quantity * order.pricePerUnit
-	logError(2, "Negative quantity allowed - restaurant owes customer money?", {
-		order,
-		calculatedTotal: total,
-		issue: "Quantity should be a positive integer!",
-	})
+    // --- Scenario B: The Absurd Quantity Bug ---
+    try {
+        console.log("Attempting to order 50,000 Coffees...")
+        
+        // This will now fail at runtime before the order is created
+        const bulkQuantity = createQuantity(50000)
 
-	// Another silent bug - absurd quantity
-	const bulkOrder: Order = {
-		itemName: "Coffee",
-		quantity: 50000, // Silent bug! Unrealistic quantity
-		pricePerUnit: 3,
-	}
+        const bulkOrder: Order = {
+            itemName: "Coffee",
+            quantity: bulkQuantity,
+            pricePerUnit: 3,
+        }
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`)
+    }
 
-	logError(2, "Absurd quantity accepted without validation", {
-		order: bulkOrder,
-		calculatedTotal: bulkOrder.quantity * bulkOrder.pricePerUnit,
-		issue: "Should we really accept an order for 50,000 coffees?",
-	})
+    // --- Scenario C: Valid Order ---
+    try {
+        const saneQuantity = createQuantity(5)
+        const validOrder: Order = {
+            itemName: "Coffee",
+            quantity: saneQuantity,
+            pricePerUnit: 3,
+        }
+        const total = validOrder.quantity * validOrder.pricePerUnit
+        console.log(`\n✅ SUCCESS: Ordered ${validOrder.quantity} ${validOrder.itemName}s. Total: $${total}`)
+    } catch (e) {
+        logError(2, "Valid order failed", e)
+    }
 }

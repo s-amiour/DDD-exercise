@@ -5,7 +5,8 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-		"exercises": "tsx index.ts"
+		"exercises": "tsx index.ts",
+		"001": "tsx explain/001-brandedTypes.ts"
 	},
 	"author": "",
 	"license": "ISC",

@@ -42,44 +42,98 @@ import { logError } from "./logger.js"
 // because that question is part of its domain responsibility.
 // ============================================================================
 
+
+type Hour = number & { readonly __brand: unique symbol }
+
+// Factory: Ensures 0-23 range
+const createHour = (h: number): Hour => {
+    if (!Number.isInteger(h)) {
+        throw new Error(`[Time Error] Hour must be an integer. Received: ${h}`)
+    }
+    if (h < 0 || h > 23) {
+        throw new Error(`[Time Error] Hour must be between 0 and 23. Received: ${h}`)
+    }
+    return h as Hour
+}
+
+// ------------------------------------------------------------------
+// 2. DEFINE THE 'OPERATING HOURS' VALUE OBJECT
+// ------------------------------------------------------------------
+class OperatingHours {
+    // Private properties: Immutable once created
+    private constructor(
+        public readonly opens: Hour,
+        public readonly closes: Hour
+    ) {}
+
+    // Factory: Creates the object safely
+    static create(opensStr: number, closesStr: number): OperatingHours {
+        return new OperatingHours(
+            createHour(opensStr), 
+            createHour(closesStr)
+        )
+    }
+
+    // Domain Logic: "Are we open?"
+    // This logic now lives HERE, not scattered in your UI code.
+    isOpenAt(current: number): boolean {
+        // Validate the input first
+        const checkHour = createHour(current);
+
+        // Scenario A: Standard Day (e.g., 09:00 to 17:00)
+        if (this.opens < this.closes) {
+            return checkHour >= this.opens && checkHour < this.closes;
+        } 
+        
+        // Scenario B: Overnight (e.g., 22:00 to 06:00)
+        // We are open if it is AFTER opening time OR BEFORE closing time.
+        // (e.g., Is 23:00 open? Yes (>= 22). Is 02:00 open? Yes (< 06).)
+        else {
+            return checkHour >= this.opens || checkHour < this.closes;
+        }
+    }
+    
+    // Helper for display
+    toString(): string {
+        return `${this.opens}:00 - ${this.closes}:00`;
+    }
+}
+
 export function exercise6_TemporalLogic() {
 	type Restaurant = {
-		name: string
-		opensAt: number // Hours (0-23)
-		closesAt: number // Hours (0-23)
-	}
+        name: string;
+        hours: OperatingHours;
+    }
 
-	const restaurant: Restaurant = {
-		name: "Joe's Diner",
-		opensAt: 22, // Opens at 10 PM
-		closesAt: 6, // Closes at 6 AM - crosses midnight!
-	}
+    // --- Scenario A: Valid Overnight Restaurant ---
+    try {
+        const joesDiner: Restaurant = {
+            name: "Joe's Diner",
+            hours: OperatingHours.create(22, 6) // Open 10 PM to 6 AM
+        };
 
-	// Simple check fails for overnight restaurants
-	const isOpen = (hour: number): boolean => {
-		return hour >= restaurant.opensAt && hour <= restaurant.closesAt
-	}
+        console.log(`Checking ${joesDiner.name} (${joesDiner.hours.toString()})...`);
 
-	// TODO: Replace the raw numbers with an OperatingHours Value Object.
-	// Move the isOpen logic INSIDE the Value Object so it correctly handles
-	// overnight spans and rejects invalid hours at construction time.
+        // Test 1: Check 2 AM (Should be OPEN)
+        const checkTime1 = 2;
+        const result1 = joesDiner.hours.isOpenAt(checkTime1);
+        console.log(`   Is open at ${checkTime1}:00? ${result1 ? "✅ YES" : "❌ NO"}`);
 
-	logError(6, "Operating hours logic broken for overnight restaurants", {
-		restaurant,
-		testHour: 2, // 2 AM should be open
-		isOpenCalculated: isOpen(2), // Returns false incorrectly
-		issue: "Simple comparison fails when hours cross midnight!",
-	})
+        // Test 2: Check 11 AM (Should be CLOSED)
+        const checkTime2 = 11;
+        const result2 = joesDiner.hours.isOpenAt(checkTime2);
+        console.log(`   Is open at ${checkTime2}:00? ${result2 ? "❌ YES" : "✅ NO"}`);
 
-	// Also accepts invalid hours
-	const brokenRestaurant: Restaurant = {
-		name: "Broken Cafe",
-		opensAt: 25, // Silent bug! Invalid hour
-		closesAt: -5, // Silent bug! Invalid hour
-	}
+    } catch (e: any) {
+        logError(6, "Unexpected error", e);
+    }
 
-	logError(6, "Invalid hours accepted without validation", {
-		restaurant: brokenRestaurant,
-		issue: "Hours should be 0-23 only!",
-	})
+    // --- Scenario B: Invalid Data Prevention ---
+    try {
+        console.log("\nAttempting to create invalid hours (25:00)...");
+        // This throws immediately
+        const brokenHours = OperatingHours.create(25, -5); 
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`);
+    }
 }

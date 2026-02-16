@@ -33,29 +33,73 @@ import { logError } from "./logger.js"
 //     types everywhere else.
 // ============================================================================
 
+
+
+type Email = string & { readonly __brand: unique symbol }
+
+const parseEmail = (raw: string): Email => {
+    // Step A: Sanitize (Trim whitespace)
+    const trimmed = raw.trim();
+
+    // Step B: Check existence
+    if (trimmed.length === 0) {
+        throw new Error("[Email Error] Email cannot be empty.");
+    }
+
+    // Step C: Validate Format (Regex)
+    // Rules: Text + @ + Text + . + Text (Simple but effective)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+        throw new Error(`[Email Error] Invalid format: "${raw}"`);
+    }
+
+    // Step D: Normalize (Store as lowercase)
+    // This ensures "Alice@Example.com" and "alice@example.com" are treated as equal.
+    return trimmed.toLowerCase() as Email;
+}
+
 export function exercise8_EmailValidation() {
 	type Customer = {
-		name: string
-		email: string
-	}
+        name: string
+        email: Email // <--- Replaced 'string'
+    }
 
-	// TODO: Replace `string` with a branded Email type backed by parseEmail().
-	// After this change, constructing a Customer with an invalid email will
-	// throw at runtime, and the type system prevents passing raw strings
-	// where an Email is expected.
+    // Raw input from an "API" or "Form" (Untrusted Data)
+    const rawInputs = [
+        { name: "Alice", rawEmail: "Alice@Example.com" },   // Valid (Mixed case)
+        { name: "Bob", rawEmail: "not-an-email" },          // Invalid
+        { name: "Charlie", rawEmail: "charlie@@double.com" }, // Invalid
+        { name: "Diana", rawEmail: "@no-local-part.com" },  // Invalid
+        { name: "Eve", rawEmail: "eve@" },                  // Invalid
+        { name: "Frank", rawEmail: "   " },                 // Invalid (Whitespace)
+    ];
 
-	// All these pass TypeScript checking
-	const customers: Customer[] = [
-		{ name: "Alice", email: "alice@example.com" }, // Valid
-		{ name: "Bob", email: "not-an-email" }, // Silent bug!
-		{ name: "Charlie", email: "charlie@@double.com" }, // Silent bug!
-		{ name: "Diana", email: "@no-local-part.com" }, // Silent bug!
-		{ name: "Eve", email: "eve@" }, // Silent bug!
-		{ name: "Frank", email: " " }, // Silent bug! Just whitespace
-	]
+    console.log(`Processing ${rawInputs.length} incoming records...`);
 
-	logError(8, "Invalid emails accepted - no domain validation", {
-		customers,
-		issue: "Email is just a string - no validation of email format!",
-	})
+    // We process the raw inputs. 
+    // We only create a 'Customer' if the email parses successfully.
+    const validCustomers: Customer[] = [];
+
+    rawInputs.forEach(input => {
+        try {
+            // THE MOMENT OF TRUTH:
+            // We attempt to "Parse" the string into an Email type.
+            const parsedEmail = parseEmail(input.rawEmail);
+
+            // If we get here, the email is guaranteed valid.
+            const customer: Customer = {
+                name: input.name,
+                email: parsedEmail
+            };
+
+            validCustomers.push(customer);
+            console.log(`✅ [Success] Created customer: ${customer.name} (${customer.email})`);
+
+        } catch (error: any) {
+            // If parsing fails, the bad data never enters our domain model.
+            console.log(`[Rejected] ${input.name}: ${error.message}`);
+        }
+    });
+
+    console.log(`\nFinal valid customer count: ${validCustomers.length}`);
 }

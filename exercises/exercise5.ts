@@ -31,43 +31,96 @@ import { logError } from "./logger.js"
 // enforcement (Repository).
 // ============================================================================
 
+
+type OrderId = string & { readonly __brand: unique symbol }
+
+// Factory: Enforce Format (ORD-XXXXX)
+const createOrderId = (id: string): OrderId => {
+    // Regex: Starts with "ORD-", followed by at least 5 digits
+    const idRegex = /^ORD-\d{5,}$/;
+    
+    if (!idRegex.test(id)) {
+        throw new Error(`[Format Error] OrderId "${id}" must match pattern ORD-XXXXX.`);
+    }
+    
+    return id as OrderId;
+}
+
+// Generator: Create a new valid ID (for new orders)
+const generateOrderId = (): OrderId => {
+    const timestamp = Date.now().toString().slice(-5);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `ORD-${timestamp}${random}` as OrderId;
+}
+
+// -------------------------------------------------------------
+type Order = {
+    orderId: OrderId; // Now strongly typed!
+    customerName: string;
+    total: number;
+}
+
+class OrderRepository {
+    // Simulating a database with a Map
+    private storage = new Map<string, Order>();
+
+    save(order: Order): void {
+        // Uniqueness Check happens HERE, not in the ID itself.
+        if (this.storage.has(order.orderId)) {
+            throw new Error(`[Duplicate Error] Order ID ${order.orderId} already exists!`);
+        }
+        
+        this.storage.set(order.orderId, order);
+        console.log(`✅ Saved Order: ${order.orderId} for ${order.customerName}`);
+    }
+}
+
 export function exercise5_IdentityCrisis() {
-	type Order = {
-		orderId: string // Just a string - could be anything!
-		customerName: string
-		total: number
-	}
+	const repository = new OrderRepository();
 
-	// TODO: Replace `string` with an OrderId branded type.
-	// Use a factory function that enforces a consistent format.
-	// Consider who is responsible for uniqueness (hint: Repository pattern).
+    // --- Scenario A: Invalid Format (Caught by Value Object) ---
+    try {
+        console.log("Attempting to create order with empty ID...");
+        // const badId = createOrderId(""); // Throws immediately
+        
+        const order: Order = {
+            orderId: createOrderId("bad-format"), // Throws immediately
+            customerName: "Alice",
+            total: 25
+        };
+    } catch (error: any) {
+        console.log(`✅ BLOCKED (Format): ${error.message}`);
+    }
 
-	// What makes a valid order ID? Nothing enforced!
-	const orders: Order[] = [
-		{
-			orderId: "", // Silent bug! Empty ID
-			customerName: "Alice",
-			total: 25,
-		},
-		{
-			orderId: "12345", // Is this valid?
-			customerName: "Bob",
-			total: 30,
-		},
-		{
-			orderId: "12345", // Silent bug! Duplicate ID
-			customerName: "Charlie",
-			total: 15,
-		},
-		{
-			orderId: "not-a-number", // Silent bug! Inconsistent format
-			customerName: "Diana",
-			total: 20,
-		},
-	]
+    // --- Scenario B: Duplicates (Caught by Repository) ---
+    try {
+        const sharedId = createOrderId("ORD-99999");
 
-	logError(5, "Order ID chaos - duplicates, empty, inconsistent formats", {
-		orders,
-		issue: "Order IDs have no enforced format or uniqueness!",
-	})
+        const order1: Order = { orderId: sharedId, customerName: "Bob", total: 30 };
+        const order2: Order = { orderId: sharedId, customerName: "Charlie", total: 15 };
+
+        // Save first order -> Success
+        repository.save(order1);
+
+        // Save second order -> Fail (Duplicate)
+        console.log("Attempting to save duplicate ID...");
+        repository.save(order2);
+
+    } catch (error: any) {
+        console.log(`✅ BLOCKED (Unique): ${error.message}`);
+    }
+
+    // --- Scenario C: Auto-Generation (Happy Path) ---
+    try {
+        const newId = generateOrderId(); // e.g., "ORD-12345..."
+        const validOrder: Order = {
+            orderId: newId,
+            customerName: "Diana",
+            total: 100
+        };
+        repository.save(validOrder);
+        
+    } catch (e) {
+        logError(5, "Unexpected error", e);
+    }
 }

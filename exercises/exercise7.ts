@@ -44,33 +44,93 @@ import { logError } from "./logger.js"
 // the single representation eliminates dollars-vs-cents ambiguity.
 // ============================================================================
 
+
+
+type Currency = "USD" | "EUR" | "GBP";
+
+class Money {
+    // Private: We store money as INTEGER CENTS to avoid floating point errors.
+    // $10.50 is stored as 1050.
+    private constructor(
+        private readonly cents: number, 
+        public readonly currency: Currency
+    ) {}
+
+    // Factory A: Create from "Human Readable" Dollars (e.g., 12.50)
+    static fromDollars(amount: number, currency: Currency): Money {
+        // Round to nearest cent to handle floating point inputs like 12.49999
+        const cents = Math.round(amount * 100);
+        return new Money(cents, currency);
+    }
+
+    // Factory B: Create from "Machine Readable" Cents (e.g., 1250)
+    // Useful for loading from databases (Stripe uses cents).
+    static fromCents(amount: number, currency: Currency): Money {
+        if (!Number.isInteger(amount)) {
+            throw new Error(`[Money Error] Cents must be an integer. Received: ${amount}`);
+        }
+        return new Money(amount, currency);
+    }
+
+    // Domain Operation: Safe Addition
+    add(other: Money): Money {
+        if (this.currency !== other.currency) {
+            throw new Error(`[Money Error] Cannot add ${this.currency} to ${other.currency}.`);
+        }
+        return new Money(this.cents + other.cents, this.currency);
+    }
+
+    // Domain Operation: Formatting
+    toString(): string {
+        // Divide by 100 to display, ensure 2 decimal places
+        const displayAmount = (this.cents / 100).toFixed(2);
+        return `${this.currency} ${displayAmount}`;
+    }
+}
+
 export function exercise7_CurrencyConfusion() {
 	type MenuItem = {
-		name: string
-		price: number // In what currency? Cents? Dollars?
-	}
+        name: string;
+        price: Money; // <--- No longer a number!
+    }
 
-	const burger: MenuItem = {
-		name: "Burger",
-		price: 12.5, // Is this $12.50 or 12.5 cents?
-	}
+    // --- Scenario A: Clarity in Creation ---
+    // Developer 1 thinks in "Dollars"
+    const burger: MenuItem = {
+        name: "Burger",
+        price: Money.fromDollars(12.50, "USD"), // Explicit!
+    }
 
-	const pizza: MenuItem = {
-		name: "Pizza",
-		price: 1850, // Is this $18.50 or $1850?
-	}
+    // Developer 2 thinks in "Cents" (maybe from a Stripe API)
+    const pizza: MenuItem = {
+        name: "Pizza",
+        price: Money.fromCents(1850, "USD"), // Explicit! ($18.50)
+    }
 
-	// TODO: Replace `number` with a Money Value Object.
-	// Force a single canonical representation (e.g., cents) so that
-	// adding burger.price + pizza.price always means the same thing.
+    // --- Scenario B: Safe Calculation ---
+    try {
+        console.log(`Burger: ${burger.price.toString()}`);
+        console.log(`Pizza:  ${pizza.price.toString()}`);
 
-	// Calculations produce unexpected results
-	const total = burger.price + pizza.price // 12.5 + 1850 = 1862.5
-	const formattedTotal = `$${total.toFixed(2)}` // $1862.50 ??
+        // The logic is now crystal clear. 
+        // We are adding Money objects, not raw numbers.
+        const total = burger.price.add(pizza.price);
 
-	logError(7, "Currency unit confusion leads to calculation errors", {
-		items: [burger, pizza],
-		calculatedTotal: formattedTotal,
-		issue: "Are prices in dollars or cents? TypeScript doesn't know!",
-	})
+        console.log(`\n✅ Total Bill: ${total.toString()}`);
+        
+    } catch (e: any) {
+        logError(7, "Calculation failed", e);
+    }
+
+    // --- Scenario C: Preventing Currency Mismatch ---
+    try {
+        const euroSalad = Money.fromDollars(10, "EUR");
+        console.log("\nAttempting to add EUR salad to USD burger...");
+        
+        // This throws a helpful error instead of calculating nonsense
+        burger.price.add(euroSalad); 
+
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`);
+    }
 }

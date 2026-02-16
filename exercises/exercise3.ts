@@ -35,37 +35,81 @@ import { logError } from "./logger.js"
 // This is the core DDD idea: make illegal states unrepresentable.
 // ============================================================================
 
+
+
+// ------------------------------------------------------------------
+// 1. DEFINE BRANDED TYPES
+// ------------------------------------------------------------------
+// Each type is a string underneath, but TypeScript treats them as distinct.
+type Email = string & { readonly __brand: unique symbol }
+type Phone = string & { readonly __brand: unique symbol }
+type CustomerName = string & { readonly __brand: unique symbol }
+
+// ------------------------------------------------------------------
+// 2. DEFINE SMART CONSTRUCTORS
+// ------------------------------------------------------------------
+
+const createEmail = (email: string): Email => {
+    // Simple regex for demonstration (real email validation is harder!)
+    const emailRegex = /^[^@]+@[^@]+\.[^@]+$/;
+    if (!emailRegex.test(email)) {
+        throw new Error(`[Validation Error] Invalid email format: "${email}"`);
+    }
+    return email as Email;
+}
+
+const createPhone = (phone: string): Phone => {
+    // allow digits and dashes, at least 7 chars
+    const phoneRegex = /^\d[\d-]{6,}$/;
+    if (!phoneRegex.test(phone)) {
+        throw new Error(`[Validation Error] Invalid phone number: "${phone}"`);
+    }
+    return phone as Phone;
+}
+
+const createCustomerName = (name: string): CustomerName => {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) {
+        throw new Error("[Validation Error] Name cannot be empty.");
+    }
+    if (trimmed.length < 2) {
+        throw new Error("[Validation Error] Name must be at least 2 characters.");
+    }
+    return trimmed as CustomerName;
+}
+
 export function exercise3_StringConfusion() {
 	type Customer = {
-		name: string
-		email: string
-		phone: string
-	}
+        name: CustomerName;
+        email: Email;
+        phone: Phone;
+    }
 
-	// TypeScript sees all strings as the same!
-	const customer: Customer = {
-		name: "john@example.com", // Silent bug! Email in name field
-		email: "John Doe", // Silent bug! Name in email field
-		phone: "555-PIZZA", // Silent bug! Letters in phone field
-	}
+	try {
+        // This will throw inside createCustomerName before the object is built
+        const badName = createCustomerName(""); 
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`);
+    }
 
-	// TODO: Create separate branded types (Email, Phone, CustomerName) so
-	// that swapping values between fields becomes a compile-time error.
+    try {
+        const badEmail = createEmail("just-a-string");
+    } catch (error: any) {
+        console.log(`✅ BLOCKED: ${error.message}`);
+    }
 
-	logError(3, "Fields mixed up - all are strings, TypeScript doesn't care", {
-		customer,
-		issue: "Email, phone, and name are all 'string' - no semantic distinction!",
-	})
+    // --- Scenario C: Success Path ---
+    try {
+        // We must manually "cast" our raw inputs through the factories
+        const validCustomer: Customer = {
+            name: createCustomerName("Alice Smith"),
+            email: createEmail("alice@example.com"),
+            phone: createPhone("555-0199"),
+        };
 
-	// Even worse - empty strings pass validation
-	const emptyCustomer: Customer = {
-		name: "",
-		email: "",
-		phone: "",
-	}
-
-	logError(3, "Empty strings accepted everywhere", {
-		customer: emptyCustomer,
-		issue: "Required fields should not be empty!",
-	})
+        console.table(validCustomer);
+        
+    } catch (e) {
+        logError(3, "Unexpected error in valid creation", e);
+    }
 }

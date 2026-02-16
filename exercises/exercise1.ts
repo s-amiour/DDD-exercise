@@ -23,30 +23,71 @@ import { logError } from "./logger.js"
 // so every price in the system is guaranteed valid by construction.
 // ============================================================================
 
+
+// 1. Define the Branded Type
+// This creates a "nominal" type. TypeScript sees 'Price' as distinct from 'number'.
+type Price = number & { readonly __brand: unique symbol }
+
+// 2. Define the Factory Function (The Validator)
+// This is the ONLY place in the app where a 'Price' is minted.
+const createPrice = (amount: number): Price => {
+    // Validation Rule 1: No negative numbers
+    if (amount < 0) {
+        throw new Error(`[Domain Error] Price cannot be negative. Received: ${amount}`)
+    }
+    
+    // Validation Rule 2: Sanity check (optional business rule)
+    if (amount > 1000) {
+        throw new Error(`[Domain Error] Price exceeds maximum limit. Received: ${amount}`)
+    }
+
+    // "Bless" the number as a Price
+    return amount as Price
+}
+
 export function exercise1_PrimitivePrice() {
 	// Without domain types, price is just a number
 	type MenuItem = {
-		name: string
-		price: number // Could be negative! Could be a huge number!
-		quantity: number
-	}
+        name: string
+        price: Price
+        quantity: number
+    }
+	console.log("\n--- Exercise 1: Primitive Obsession Fix ---")
 
-	const orderItem: MenuItem = {
-		name: "Burger",
-		price: -50, // Silent bug! Negative price
-		quantity: 1,
-	}
+    // Attempting to use the invalid data (Refactored logic)
+    try {
+        // error: The following line is now a Compile-Time Error!
+        // const buggedItem: MenuItem = { name: "Burger", price: -50, quantity: 1 }
+        
+        // We must now use the factory:
+        console.log("Attempting to create a burger with price -50...")
+        const validPrice = createPrice(-50) // This will throw immediately
 
-	// TODO: Replace `number` with a Price branded type.
-	// The goal is to make this line a compile-time error:
-	//   price: -50   // <-- should NOT be assignable to Price
-	// Instead, force callers through createPrice(-50), which throws at runtime.
+        const orderItem: MenuItem = {
+            name: "Burger",
+            price: validPrice,
+            quantity: 1,
+        }
 
-	const total = orderItem.price * orderItem.quantity
-	logError(1, "Negative price accepted without complaint", {
-		item: orderItem.name,
-		price: orderItem.price,
-		calculatedTotal: total,
-		issue: "Price should never be negative!",
-	})
+    } catch (error: any) {
+        // Catching the validation error
+        console.log(`✅ SUCCESS: The system prevented the bad data!`)
+        console.error(`   Error caught: "${error.message}"`)
+    }
+
+    // Valid Usage Demonstration
+    try {
+        const validItem: MenuItem = {
+            name: "Premium Burger",
+            price: createPrice(15), // Valid input
+            quantity: 2
+        }
+        
+        const total = validItem.price * validItem.quantity
+        console.log(`\n✅ Created valid item: ${validItem.name} for $${validItem.price}`)
+        console.log(`   Total calculated: $${total}`)
+        
+    } catch (e) {
+        logError(1, "Unexpected error in valid creation", e)
+    }
 }
