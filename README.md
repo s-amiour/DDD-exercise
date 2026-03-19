@@ -1,5 +1,9 @@
-# Strong Typing in TypeScript for robust domain-driven design
-
+# Robust Domain-driven Design
+```
+Semester: S4
+Course: Advanced JavaScript Programming
+Course code: PROG_AJS1
+```
 ## PREVIOUS KNOWLEDGE
 
 1. Running code in TypeScript with Node.js
